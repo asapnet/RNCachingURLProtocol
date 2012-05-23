@@ -90,26 +90,53 @@ static NSString *RNCachingURLHeader = @"X-RNCache";
 
 }
 
+- (BOOL)cacheFileIsYoungerThan:(double)seconds
+{
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    NSString *filePath = [self cachePathForRequest:[self request]];
+    NSDictionary *fileAttributes = [fileManager attributesOfItemAtPath:filePath error:nil];
+    NSDate *fileModificationDate = [fileAttributes objectForKey:NSFileModificationDate];
+    return (fileAttributes && fileModificationDate && [fileModificationDate timeIntervalSinceNow] > -seconds);
+}
+
+- (void)renderFromCache:(RNCachedData *)cache
+{
+    NSData *data = [cache data];
+    NSURLResponse *response = [cache response];
+    [[self client] URLProtocol:self didReceiveResponse:response cacheStoragePolicy:NSURLCacheStorageAllowed];
+    [[self client] URLProtocol:self didLoadData:data];
+    [[self client] URLProtocolDidFinishLoading:self];
+}
+
 - (void)startLoading
 {
-  if ([[Reachability reachabilityWithHostName:[[[self request] URL] host]] currentReachabilityStatus] != NotReachable) {
-    NSURLConnection *connection = [NSURLConnection connectionWithRequest:[self request]
-                                                                delegate:self];
-    [self setConnection:connection];
-  }
-  else {
-    RNCachedData *cache = [NSKeyedUnarchiver unarchiveObjectWithFile:[self cachePathForRequest:[self request]]];
-    if (cache) {
-      NSData *data = [cache data];
-      NSURLResponse *response = [cache response];
-      [[self client] URLProtocol:self didReceiveResponse:response cacheStoragePolicy:NSURLCacheStorageAllowed];
-      [[self client] URLProtocol:self didLoadData:data];
-      [[self client] URLProtocolDidFinishLoading:self];
+    RNCachedData *cache     = [NSKeyedUnarchiver unarchiveObjectWithFile:[self cachePathForRequest:[self request]]];
+    BOOL networkIsReachable = ([[Reachability reachabilityWithHostName:[[[self request] URL] host]] currentReachabilityStatus] != NotReachable);
+    
+    if (networkIsReachable)
+    {
+        if (cache && [self cacheFileIsYoungerThan:900.0/*seconds*/])
+        {
+            [self renderFromCache:cache];
+        }
+        else
+        {
+            NSURLConnection *connection = [NSURLConnection connectionWithRequest:[self request]
+                                                                        delegate:self];
+            [self setConnection:connection];
+        }
     }
-    else {
-      [[self client] URLProtocol:self didFailWithError:[NSError errorWithDomain:NSURLErrorDomain code:NSURLErrorCannotConnectToHost userInfo:nil]];
+    else /* network is NOT reachable */
+    {
+        if (cache && [self cacheFileIsYoungerThan:86400.0/*seconds*/])
+        {
+            [self renderFromCache:cache];
+        }
+        else
+        {
+            [[self client] URLProtocol:self didFailWithError:[NSError errorWithDomain:NSURLErrorDomain code:NSURLErrorCannotConnectToHost userInfo:nil]];
+        }
     }
-  }
 }
 
 - (void)stopLoading
