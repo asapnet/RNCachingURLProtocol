@@ -28,8 +28,9 @@
 #import "RNCachingURLProtocol.h"
 #import "Reachability.h"
 
-extern double const AISArticlePageCacheLifeInSecondsWhenOnline;
-extern double const AISArticlePageCacheLifeInSecondsWhenOffline;
+// UGLY, but how else to preconfigure instances initialized by the system???
+extern double const RNArticlePageCacheLifeInSecondsWhenOnline;
+extern double const RNArticlePageCacheLifeInSecondsWhenOffline;
 
 @interface RNCachedData : NSObject <NSCoding>
 @property (nonatomic, readwrite, strong) NSData *data;
@@ -147,7 +148,7 @@ static NSString *RNCachingURLHeader = @"X-RNCache";
     
     if (networkIsReachable)
     {
-        if (cache && [self cacheFileIsYoungerThan:AISArticlePageCacheLifeInSecondsWhenOnline])
+        if (cache && [self cacheFileIsYoungerThan:RNArticlePageCacheLifeInSecondsWhenOnline])
         {
             [self renderFromCache:cache];
         }
@@ -160,7 +161,7 @@ static NSString *RNCachingURLHeader = @"X-RNCache";
     }
     else /* network is NOT reachable */
     {
-        if (cache && [self cacheFileIsYoungerThan:AISArticlePageCacheLifeInSecondsWhenOffline])
+        if (cache && [self cacheFileIsYoungerThan:RNArticlePageCacheLifeInSecondsWhenOffline])
         {
             [self renderFromCache:cache];
         }
