@@ -59,7 +59,11 @@
 //    [Drop-in offline caching for UIWebView (and NSURLProtocol)](http://robnapier.net/blog/offline-uiwebview-nsurlprotocol-588).
 
 #import <Foundation/Foundation.h>
+#import "RNCachePruningOptions.h"
+
 
 @interface RNCachingURLProtocol : NSURLProtocol
+
++ (void)pruneCacheWithOptions:(RNCachePruningOptions *)options;
 
 @end
