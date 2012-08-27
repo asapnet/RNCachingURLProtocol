@@ -208,6 +208,18 @@ static NSString *RNCachingURLHeader = @"X-RNCache";
     [[self client] URLProtocol:self didReceiveResponse:response cacheStoragePolicy:NSURLCacheStorageNotAllowed];  // We cache ourselves.
 }
 
+// Fix weird scroll bugs in some content.
+- (NSMutableData *)fixScrollDirectivesInStylesheet:(NSData *)stylesheetData
+{
+    NSString *stylesheet = [[NSString alloc] initWithData:stylesheetData encoding:NSUTF8StringEncoding];
+    NSString *fixedStylesheet = [stylesheet stringByReplacingMatchesOfExpression:@"overflow:\\s+hidden;"
+                                                                         options:0
+                                                                    withTemplate:@"overflow: auto"
+                                                                         options:0];
+    NSMutableData *fixedStylesheetData = [NSMutableData dataWithData:[fixedStylesheet dataUsingEncoding:NSUTF8StringEncoding]];
+    return fixedStylesheetData;
+}
+
 - (void)connectionDidFinishLoading:(NSURLConnection *)connection
 {
     [[self client] URLProtocolDidFinishLoading:self];
@@ -215,6 +227,10 @@ static NSString *RNCachingURLHeader = @"X-RNCache";
     NSString *cachePath = [self cachePathForRequest:[self request]];
     RNCachedData *cache = [RNCachedData new];
     [cache setResponse:[self response]];
+    if ([self.response.MIMEType isEqualToString:@"text/css"])
+    {
+        self.data = [self fixScrollDirectivesInStylesheet:self.data];
+    }
     [cache setData:[self data]];
     [NSKeyedArchiver archiveRootObject:cache toFile:cachePath];
 
