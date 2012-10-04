@@ -85,7 +85,7 @@ static NSString *RNCachingURLHeader = @"X-RNCache";
             {
                 NSString *filePath = [[self cachesPath] stringByAppendingPathComponent:fileName];
                 NSDictionary *fileAttributes = [directoryEnumerator fileAttributes];
-                NSDate *fileModificationDate = [fileAttributes objectForKey:NSFileModificationDate];
+                NSDate *fileModificationDate = fileAttributes[NSFileModificationDate];
                 if (fileAttributes && fileModificationDate && [fileModificationDate timeIntervalSinceNow] < -options.age)
                 {
                     NSLog(@"Removing cache file: %@", fileName);
@@ -128,7 +128,7 @@ static NSString *RNCachingURLHeader = @"X-RNCache";
     NSFileManager *fileManager = [NSFileManager defaultManager];
     NSString *filePath = [self cachePathForRequest:[self request]];
     NSDictionary *fileAttributes = [fileManager attributesOfItemAtPath:filePath error:nil];
-    NSDate *fileModificationDate = [fileAttributes objectForKey:NSFileModificationDate];
+    NSDate *fileModificationDate = fileAttributes[NSFileModificationDate];
     return (fileAttributes && fileModificationDate && [fileModificationDate timeIntervalSinceNow] > -seconds);
 }
 
